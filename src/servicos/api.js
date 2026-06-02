@@ -150,3 +150,29 @@ export async function atualizarPoção(id, dados) {
 export async function deletarPoção(id) {
   await api.delete(`/pocoes/${id}`);
 }
+
+// ========== FEITICEIROS ==========
+
+export async function buscarFeiticeiros() {
+  const resposta = await api.get("/feiticeiros");
+  return resposta.data;
+}
+
+export async function buscarFeiticeiroPorId(id) {
+  const resposta = await api.get(`/feiticeiros/${id}`);
+  return resposta.data;
+}
+
+export async function criarFeiticeiro(dados) {
+  const resposta = await api.post("/feiticeiros", dados);
+  return resposta.data;
+}
+
+export async function atualizarFeiticeiro(id, dados) {
+  const resposta = await api.put(`/feiticeiros/${id}`, dados);
+  return resposta.data;
+}
+
+export async function deletarFeiticeiro(id) {
+  await api.delete(`/feiticeiros/${id}`);
+}
