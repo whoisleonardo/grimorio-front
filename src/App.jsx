@@ -4,6 +4,7 @@ import PaginaRegistro from "./paginas/PaginaRegistro";
 import PaginaUsuarios from "./paginas/PaginaUsuarios";
 import PaginaEscolasDeMagia from "./paginas/PaginaEscolasDeMagia";
 import PaginaIngredientes from "./paginas/PaginaIngredientes";
+import PaginaPoções from "./paginas/PaginaPoções";
 
 export default function App() {
   const [tela, setTela] = useState(
@@ -48,21 +49,25 @@ export default function App() {
   }
 
   if (tela === "usuarios") {
-    return <PaginaUsuarios aoSair={handleSair} />;
+    return <PaginaUsuarios aoSair={handleSair} aoVoltar={() => setTela("home")} />;
   }
 
   if (tela === "escolas") {
-    return <PaginaEscolasDeMagia aoVoltar={() => setTela("home")} />;
+    return <PaginaEscolasDeMagia aoSair={handleSair} aoVoltar={() => setTela("home")} />;
   }
 
   if (tela === "ingredientes") {
-    return <PaginaIngredientes aoVoltar={() => setTela("home")} />;
+    return <PaginaIngredientes aoSair={handleSair} aoVoltar={() => setTela("home")} />;
+  }
+
+  if (tela === "pocoes") {
+    return <PaginaPoções aoSair={handleSair} aoVoltar={() => setTela("home")} />;
   }
 }
 
 function PaginaHome({ aoSair, irPara }) {
   const nomeUsuario = localStorage.getItem("nomeUsuario");
-  
+
   return (
     <div style={estilosHome.pagina}>
       <div style={estilosHome.cabecalho}>
@@ -75,7 +80,7 @@ function PaginaHome({ aoSair, irPara }) {
 
       <div style={estilosHome.conteudo}>
         <h2 style={estilosHome.subtitulo}>Escolha o que deseja gerenciar:</h2>
-        
+
         <div style={estilosHome.grade}>
           <div style={estilosHome.card} onClick={() => irPara("usuarios")}>
             <div style={estilosHome.icone}>👥</div>
@@ -93,6 +98,12 @@ function PaginaHome({ aoSair, irPara }) {
             <div style={estilosHome.icone}>🧪</div>
             <h3 style={estilosHome.nomeCard}>Ingredientes</h3>
             <p style={estilosHome.descricao}>Gerencie ingredientes para poções</p>
+          </div>
+
+          <div style={estilosHome.card} onClick={() => irPara("pocoes")}>
+            <div style={estilosHome.icone}>⚗️</div>
+            <h3 style={estilosHome.nomeCard}>Poções</h3>
+            <p style={estilosHome.descricao}>Crie e gerencie poções mágicas</p>
           </div>
         </div>
       </div>
@@ -150,7 +161,7 @@ const estilosHome = {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
     gap: "24px",
-    maxWidth: "900px",
+    maxWidth: "1100px",
     margin: "0 auto",
   },
   card: {

@@ -1,5 +1,22 @@
 import axios from "axios";
 
+
+function toCamelCase(obj) {
+  if (Array.isArray(obj)) {
+    return obj.map((item) => toCamelCase(item));
+  } else if (obj !== null && typeof obj === "object") {
+    const newObj = {};
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        const camelKey = key.charAt(0).toLowerCase() + key.slice(1);
+        newObj[camelKey] = toCamelCase(obj[key]);
+      }
+    }
+    return newObj;
+  }
+  return obj;
+}
+
 const api = axios.create({
   baseURL: "/api",
 });
@@ -12,10 +29,26 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => {
+    if (response.data) {
+      response.data = toCamelCase(response.data);
+    }
+    return response;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+
+
 export async function fazerLogin(email, senha) {
   const resposta = await api.post("/auth/login", { email, senha });
   return resposta.data;
 }
+
+
 
 export async function buscarUsuarios() {
   const resposta = await api.get("/usuarios");
@@ -41,7 +74,7 @@ export async function deletarUsuario(id) {
   await api.delete(`/usuarios/${id}`);
 }
 
-// ========== ESCOLAS DE MAGIA ==========
+
 
 export async function buscarEscolasDeMagia() {
   const resposta = await api.get("/escolasdemagias");
@@ -67,7 +100,7 @@ export async function deletarEscolaDeMagia(id) {
   await api.delete(`/escolasdemagias/${id}`);
 }
 
-// ========== INGREDIENTES ==========
+
 
 export async function buscarIngredientes() {
   const resposta = await api.get("/ingredientes");
@@ -91,4 +124,29 @@ export async function atualizarIngrediente(id, dados) {
 
 export async function deletarIngrediente(id) {
   await api.delete(`/ingredientes/${id}`);
+}
+
+
+export async function buscarPoções() {
+  const resposta = await api.get("/pocoes");
+  return resposta.data;
+}
+
+export async function buscarPoçãoPorId(id) {
+  const resposta = await api.get(`/pocoes/${id}`);
+  return resposta.data;
+}
+
+export async function criarPoção(dados) {
+  const resposta = await api.post("/pocoes", dados);
+  return resposta.data;
+}
+
+export async function atualizarPoção(id, dados) {
+  const resposta = await api.put(`/pocoes/${id}`, dados);
+  return resposta.data;
+}
+
+export async function deletarPoção(id) {
+  await api.delete(`/pocoes/${id}`);
 }
