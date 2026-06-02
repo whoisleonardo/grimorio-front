@@ -4,6 +4,7 @@ import PaginaRegistro from "./paginas/PaginaRegistro";
 import PaginaUsuarios from "./paginas/PaginaUsuarios";
 import PaginaEscolasDeMagia from "./paginas/PaginaEscolasDeMagia";
 import PaginaIngredientes from "./paginas/PaginaIngredientes";
+import PaginaFeiticeiros from "./paginas/PaginaFeiticeiros";
 
 export default function App() {
   const [tela, setTela] = useState(
@@ -58,6 +59,10 @@ export default function App() {
   if (tela === "ingredientes") {
     return <PaginaIngredientes aoVoltar={() => setTela("home")} />;
   }
+
+  if (tela === "feiticeiros") {
+    return <PaginaFeiticeiros aoVoltar={() => setTela("home")} />;
+  }
 }
 
 function PaginaHome({ aoSair, irPara }) {
@@ -93,6 +98,12 @@ function PaginaHome({ aoSair, irPara }) {
             <div style={estilosHome.icone}>🧪</div>
             <h3 style={estilosHome.nomeCard}>Ingredientes</h3>
             <p style={estilosHome.descricao}>Gerencie ingredientes para poções</p>
+          </div>
+
+          <div style={estilosHome.card} onClick={() => irPara("feiticeiros")}>
+            <div style={estilosHome.icone}>🧙</div>
+            <h3 style={estilosHome.nomeCard}>Feiticeiros</h3>
+            <p style={estilosHome.descricao}>Gerencie os feiticeiros do grimório</p>
           </div>
         </div>
       </div>
