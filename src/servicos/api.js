@@ -77,27 +77,27 @@ export async function deletarUsuario(id) {
 
 
 export async function buscarEscolasDeMagia() {
-  const resposta = await api.get("/escolasdemagias");
+  const resposta = await api.get("/EscolasDeMagia");
   return resposta.data;
 }
 
 export async function buscarEscolaDeMagiaPorId(id) {
-  const resposta = await api.get(`/escolasdemagias/${id}`);
+  const resposta = await api.get(`/EscolasDeMagia/${id}`);
   return resposta.data;
 }
 
 export async function criarEscolaDeMagia(dados) {
-  const resposta = await api.post("/escolasdemagias", dados);
+  const resposta = await api.post("/EscolasDeMagia", dados);
   return resposta.data;
 }
 
 export async function atualizarEscolaDeMagia(id, dados) {
-  const resposta = await api.put(`/escolasdemagias/${id}`, dados);
+  const resposta = await api.put(`/EscolasDeMagia/${id}`, dados);
   return resposta.data;
 }
 
 export async function deletarEscolaDeMagia(id) {
-  await api.delete(`/escolasdemagias/${id}`);
+  await api.delete(`/EscolasDeMagia/${id}`);
 }
 
 

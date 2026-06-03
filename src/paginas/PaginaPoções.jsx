@@ -5,6 +5,7 @@ import {
   atualizarPoção,
   deletarPoção,
   buscarIngredientes,
+  atualizarIngrediente,
 } from "../servicos/api";
 
 const FORM_VAZIO = {
@@ -14,7 +15,7 @@ const FORM_VAZIO = {
   ingredientes: [],
 };
 
-export default function PaginaPoções({ aoSair, irParaUsuarios }) {
+export default function PaginaPoções({ aoSair, aoVoltar, irParaUsuarios }) {
   const [poções, setPoções] = useState([]);
   const [ingredientes, setIngredientes] = useState([]);
   const [formulario, setFormulario] = useState(FORM_VAZIO);
@@ -35,6 +36,12 @@ export default function PaginaPoções({ aoSair, irParaUsuarios }) {
     carregarPoções();
     carregarIngredientes();
   }, []);
+
+  useEffect(() => {
+    if (!mensagem) return;
+    const t = setTimeout(() => setMensagem(""), 4000);
+    return () => clearTimeout(t);
+  }, [mensagem]);
 
   async function carregarIngredientes() {
     try {
@@ -128,6 +135,15 @@ export default function PaginaPoções({ aoSair, irParaUsuarios }) {
     const erroValidacao = validarFormulario();
     if (erroValidacao) return setErro(erroValidacao);
 
+    if (!idEditando) {
+      for (const item of formulario.ingredientes) {
+        const ing = ingredientes.find(i => i.id === item.ingredienteId);
+        if (ing && ing.quantidade < item.quantidadeNecessaria) {
+          return setErro(`Estoque insuficiente de "${ing.nome}": disponível ${ing.quantidade}, necessário ${item.quantidadeNecessaria}`);
+        }
+      }
+    }
+
     setCarregando(true);
     try {
       const dados = {
@@ -142,7 +158,41 @@ export default function PaginaPoções({ aoSair, irParaUsuarios }) {
         setMensagem("Poção atualizada com sucesso!");
       } else {
         await criarPoção(dados);
-        setMensagem("Poção criada com sucesso!");
+
+        const consumidosTotalmente = [];
+        const falhasAtualizacao = [];
+
+        await Promise.allSettled(
+          formulario.ingredientes.map(async item => {
+            const ing = ingredientes.find(i => i.id === item.ingredienteId);
+            if (!ing) return;
+            const novaQtd = ing.quantidade - item.quantidadeNecessaria;
+            if (novaQtd <= 0) {
+              consumidosTotalmente.push(ing.nome);
+              return;
+            }
+            try {
+              await atualizarIngrediente(item.ingredienteId, {
+                nome: ing.nome,
+                descricao: ing.descricao,
+                raridade: ing.raridade,
+                quantidade: novaQtd,
+              });
+            } catch {
+              falhasAtualizacao.push(ing.nome);
+            }
+          })
+        );
+
+        await carregarIngredientes();
+
+        if (falhasAtualizacao.length > 0) {
+          setMensagem(`Poção criada! Mas não foi possível atualizar o estoque de: ${falhasAtualizacao.join(", ")}.`);
+        } else if (consumidosTotalmente.length > 0) {
+          setMensagem(`Poção criada! Atenção: "${consumidosTotalmente.join(", ")}" foi totalmente consumido.`);
+        } else {
+          setMensagem("Poção criada com sucesso!");
+        }
       }
 
       setFormulario(FORM_VAZIO);
@@ -206,7 +256,12 @@ export default function PaginaPoções({ aoSair, irParaUsuarios }) {
     <div style={estilos.pagina}>
       {/* Cabeçalho */}
       <div style={estilos.cabecalho}>
-        <h1 style={estilos.titulo}>🧪 Grimório Digital</h1>
+        <div style={estilos.cabecalhoEsquerda}>
+          {aoVoltar && (
+            <button onClick={aoVoltar} style={estilos.botaoVoltar}>← Voltar</button>
+          )}
+          <h1 style={estilos.titulo}>🧪 Grimório Digital</h1>
+        </div>
         <div style={estilos.cabecalhoDireita}>
           <span style={estilos.nomeUsuario}>Olá, {nomeUsuario}</span>
           {irParaUsuarios && (
@@ -436,6 +491,20 @@ const estilos = {
     justifyContent: "space-between",
     alignItems: "center",
     borderBottom: "1px solid #2e2e4e",
+  },
+  cabecalhoEsquerda: {
+    display: "flex",
+    alignItems: "center",
+    gap: "16px",
+  },
+  botaoVoltar: {
+    padding: "6px 16px",
+    backgroundColor: "transparent",
+    border: "1px solid #444",
+    borderRadius: "6px",
+    color: "#ccc",
+    cursor: "pointer",
+    fontSize: "14px",
   },
   titulo: {
     color: "#a78bfa",

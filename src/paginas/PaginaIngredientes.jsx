@@ -21,6 +21,12 @@ export default function PaginaIngredientes({ aoVoltar }) {
     carregarIngredientes();
   }, []);
 
+  useEffect(() => {
+    if (!mensagem) return;
+    const t = setTimeout(() => setMensagem(""), 4000);
+    return () => clearTimeout(t);
+  }, [mensagem]);
+
   async function carregarIngredientes() {
     try {
       const lista = await buscarIngredientes();

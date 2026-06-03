@@ -8,7 +8,7 @@ import {
 
 const FORM_VAZIO = { nome: "", email: "", senha: "", role: "Membro" };
 
-export default function PaginaUsuarios({ aoSair }) {
+export default function PaginaUsuarios({ aoSair, aoVoltar }) {
   const [usuarios, setUsuarios] = useState([]);
   const [formulario, setFormulario] = useState(FORM_VAZIO);
   const [idEditando, setIdEditando] = useState(null);
@@ -20,6 +20,12 @@ export default function PaginaUsuarios({ aoSair }) {
   useEffect(() => {
     carregarUsuarios();
   }, []);
+
+  useEffect(() => {
+    if (!mensagem) return;
+    const t = setTimeout(() => setMensagem(""), 4000);
+    return () => clearTimeout(t);
+  }, [mensagem]);
 
   async function carregarUsuarios() {
     try {
@@ -91,7 +97,11 @@ export default function PaginaUsuarios({ aoSair }) {
       setMensagem("Usuário excluído com sucesso!");
       await carregarUsuarios();
     } catch (erro) {
-      setErro(erro.response?.data?.mensagem || 'Erro na operação');
+      if (erro.response?.status === 403) {
+        setErro('Apenas administradores podem excluir usuários.');
+      } else {
+        setErro(erro.response?.data?.mensagem || 'Erro ao excluir usuário.');
+      }
     }
   }
 
@@ -113,7 +123,12 @@ export default function PaginaUsuarios({ aoSair }) {
     <div style={estilos.pagina}>
       {/* Cabeçalho */}
       <div style={estilos.cabecalho}>
-        <h1 style={estilos.titulo}>🔮 Grimório Digital</h1>
+        <div style={estilos.cabecalhoEsquerda}>
+          {aoVoltar && (
+            <button onClick={aoVoltar} style={estilos.botaoVoltar}>← Voltar</button>
+          )}
+          <h1 style={estilos.titulo}>🔮 Grimório Digital</h1>
+        </div>
         <div style={estilos.cabecalhoDireita}>
           <span style={estilos.nomeUsuario}>Olá, {nomeUsuario}</span>
           <button onClick={handleSair} style={estilos.botaoSair}>Sair</button>
@@ -258,6 +273,20 @@ const estilos = {
     justifyContent: "space-between",
     alignItems: "center",
     borderBottom: "1px solid #2e2e4e",
+  },
+  cabecalhoEsquerda: {
+    display: "flex",
+    alignItems: "center",
+    gap: "16px",
+  },
+  botaoVoltar: {
+    padding: "6px 16px",
+    backgroundColor: "transparent",
+    border: "1px solid #444",
+    borderRadius: "6px",
+    color: "#ccc",
+    cursor: "pointer",
+    fontSize: "14px",
   },
   titulo: {
     color: "#a78bfa",

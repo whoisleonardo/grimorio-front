@@ -1,12 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  buscarFeiticeiros,
-  criarFeiticeiro,
-  atualizarFeiticeiro,
-  deletarFeiticeiro,
-} from "../servicos/api";
-import { buscarEscolasDeMagia } from "../servicos/api";
-import { buscarUsuarios } from "../servicos/api";
+import { buscarEscolasDeMagia, buscarUsuarios } from "../servicos/api";
 
 const FORM_VAZIO = {
   nome: "",
@@ -15,6 +8,20 @@ const FORM_VAZIO = {
   escolaDeMagiaId: "",
   usuarioId: "",
 };
+
+const LOCAL_KEY = "grimorio_feiticeiros";
+
+function getLocalFeiticeiros() {
+  try {
+    return JSON.parse(localStorage.getItem(LOCAL_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalFeiticeiros(lista) {
+  localStorage.setItem(LOCAL_KEY, JSON.stringify(lista));
+}
 
 export default function PaginaFeiticeiros({ aoVoltar }) {
   const [feiticeiros, setFeiticeiros] = useState([]);
@@ -30,28 +37,28 @@ export default function PaginaFeiticeiros({ aoVoltar }) {
     carregarTudo();
   }, []);
 
+  useEffect(() => {
+    if (!mensagem) return;
+    const t = setTimeout(() => setMensagem(""), 4000);
+    return () => clearTimeout(t);
+  }, [mensagem]);
+
   async function carregarTudo() {
     try {
-      const [listaFeiticeiros, listaEscolas, listaUsuarios] = await Promise.all([
-        buscarFeiticeiros(),
+      const [listaEscolas, listaUsuarios] = await Promise.all([
         buscarEscolasDeMagia(),
         buscarUsuarios(),
       ]);
-      setFeiticeiros(listaFeiticeiros);
       setEscolas(listaEscolas);
       setUsuarios(listaUsuarios);
+      setFeiticeiros(getLocalFeiticeiros());
     } catch (erro) {
       setErro("Erro ao carregar dados: " + erro.message);
     }
   }
 
-  async function carregarFeiticeiros() {
-    try {
-      const lista = await buscarFeiticeiros();
-      setFeiticeiros(lista);
-    } catch (erro) {
-      setErro("Erro ao carregar feiticeiros: " + erro.message);
-    }
+  function carregarFeiticeiros() {
+    setFeiticeiros(getLocalFeiticeiros());
   }
 
   function validarFormulario() {
@@ -78,31 +85,46 @@ export default function PaginaFeiticeiros({ aoVoltar }) {
 
     setCarregando(true);
     try {
+      const lista = getLocalFeiticeiros();
+      const escola = escolas.find(e => e.id === Number(formulario.escolaDeMagiaId));
+      const usuario = usuarios.find(u => u.id === Number(formulario.usuarioId));
+
       if (idEditando) {
-        const dados = {
-          nome: formulario.nome,
-          nivelMagico: Number(formulario.nivelMagico),
-          especialidade: formulario.especialidade,
-          escolaDeMagiaId: Number(formulario.escolaDeMagiaId),
-        };
-        await atualizarFeiticeiro(idEditando, dados);
+        const novaLista = lista.map(f =>
+          f.id === idEditando
+            ? {
+                ...f,
+                nome: formulario.nome,
+                nivelMagico: Number(formulario.nivelMagico),
+                especialidade: formulario.especialidade,
+                escolaDeMagiaId: Number(formulario.escolaDeMagiaId),
+                nomeEscola: escola?.nome || f.nomeEscola,
+              }
+            : f
+        );
+        saveLocalFeiticeiros(novaLista);
         setMensagem("Feiticeiro atualizado com sucesso!");
       } else {
-        const dados = {
+        const novoId = lista.length === 0 ? 1 : Math.max(...lista.map(f => f.id)) + 1;
+        const novo = {
+          id: novoId,
           nome: formulario.nome,
           nivelMagico: Number(formulario.nivelMagico),
           especialidade: formulario.especialidade,
           escolaDeMagiaId: Number(formulario.escolaDeMagiaId),
           usuarioId: Number(formulario.usuarioId),
+          nomeEscola: escola?.nome || "",
+          nomeUsuario: usuario?.nome || "",
         };
-        await criarFeiticeiro(dados);
+        saveLocalFeiticeiros([...lista, novo]);
         setMensagem("Feiticeiro cadastrado com sucesso!");
       }
+
       setFormulario(FORM_VAZIO);
       setIdEditando(null);
-      await carregarFeiticeiros();
-    } catch (erro) {
-      setErro(erro.response?.data?.mensagem || "Erro na operação");
+      carregarFeiticeiros();
+    } catch {
+      setErro("Erro na operação");
     } finally {
       setCarregando(false);
     }
@@ -121,16 +143,13 @@ export default function PaginaFeiticeiros({ aoVoltar }) {
     setMensagem("");
   }
 
-  async function handleDeletar(id) {
+  function handleDeletar(id) {
     if (!confirm("Tem certeza que deseja excluir este feiticeiro?")) return;
     setErro("");
-    try {
-      await deletarFeiticeiro(id);
-      setMensagem("Feiticeiro excluído com sucesso!");
-      await carregarFeiticeiros();
-    } catch (erro) {
-      setErro(erro.response?.data?.mensagem || "Erro na operação");
-    }
+    const lista = getLocalFeiticeiros();
+    saveLocalFeiticeiros(lista.filter(f => f.id !== id));
+    setMensagem("Feiticeiro excluído com sucesso!");
+    carregarFeiticeiros();
   }
 
   function handleCancelar() {
@@ -148,7 +167,6 @@ export default function PaginaFeiticeiros({ aoVoltar }) {
       </div>
 
       <div style={estilos.conteudo}>
-        {/* Formulário */}
         <div style={estilos.card}>
           <h2 style={estilos.tituloCard}>
             {idEditando ? "Editar Feiticeiro" : "Novo Feiticeiro"}
@@ -239,7 +257,6 @@ export default function PaginaFeiticeiros({ aoVoltar }) {
           </form>
         </div>
 
-        {/* Tabela */}
         <div style={estilos.card}>
           <h2 style={estilos.tituloCard}>Feiticeiros Cadastrados ({feiticeiros.length})</h2>
 
@@ -270,16 +287,10 @@ export default function PaginaFeiticeiros({ aoVoltar }) {
                     <td style={estilos.td}>{feiticeiro.nomeEscola}</td>
                     <td style={estilos.td}>{feiticeiro.nomeUsuario}</td>
                     <td style={estilos.td}>
-                      <button
-                        onClick={() => handleEditar(feiticeiro)}
-                        style={estilos.botaoEditar}
-                      >
+                      <button onClick={() => handleEditar(feiticeiro)} style={estilos.botaoEditar}>
                         Editar
                       </button>
-                      <button
-                        onClick={() => handleDeletar(feiticeiro.id)}
-                        style={estilos.botaoDeletar}
-                      >
+                      <button onClick={() => handleDeletar(feiticeiro.id)} style={estilos.botaoDeletar}>
                         Excluir
                       </button>
                     </td>

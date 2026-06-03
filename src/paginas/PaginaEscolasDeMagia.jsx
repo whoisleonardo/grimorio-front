@@ -20,6 +20,12 @@ export default function PaginaEscolasDeMagia({ aoVoltar }) {
     carregarEscolas();
   }, []);
 
+  useEffect(() => {
+    if (!mensagem) return;
+    const t = setTimeout(() => setMensagem(""), 4000);
+    return () => clearTimeout(t);
+  }, [mensagem]);
+
   async function carregarEscolas() {
     try {
       const lista = await buscarEscolasDeMagia();
